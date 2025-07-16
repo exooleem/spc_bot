@@ -9,19 +9,23 @@ from telegram.ext import (
     filters,
 )
 
+# Получение токена и ID админа
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
+# Состояния анкеты
 NAME, CITY, WHY = range(3)
 
-async def старт(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        f"Добро пожаловать в Successful People Club, {update.effective_user.first_name}.\n"
-        "Чтобы подать заявку, напишите /заявка.\n"
-        "Отменить — /отмена."
+        f"Добро пожаловать в Successful People Club, {update.effective_user.first_name}.\n\n"
+        "📩 Чтобы отправить заявку — напишите /apply\n"
+        "❌ Чтобы отменить — /cancel"
     )
 
-async def заявка(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# /apply
+async def apply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Как вас зовут?")
     return NAME
 
@@ -62,24 +66,26 @@ async def get_why(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return ConversationHandler.END
 
+# /cancel
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Заявка отменена.", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
+# Запуск
 def main():
     app = Application.builder().token(TOKEN).build()
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("заявка", заявка)],
+        entry_points=[CommandHandler("apply", apply)],
         states={
             NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
             CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
             WHY:  [MessageHandler(filters.TEXT & ~filters.COMMAND, get_why)],
         },
-        fallbacks=[CommandHandler("отмена", cancel)],
+        fallbacks=[CommandHandler("cancel", cancel)],
     )
 
-    app.add_handler(CommandHandler("старт", старт))
+    app.add_handler(CommandHandler("start", start))
     app.add_handler(conv_handler)
 
     app.run_polling()
